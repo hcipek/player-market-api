@@ -120,7 +120,7 @@ public class PlayerMarketService {
 	private PlayerMarketItem createItem(Player player, Team team) {
 		PlayerMarketItem item = new PlayerMarketItem(player, team);
 		item.setContractFee(calculateContractFee(player, team));
-		item.setCurrencyCode(team.getCurrency().getCode());
+		item.setCurrencyCode(team != null ? team.getCurrency().getCode() : null);
 		return item;
 	}
 	
@@ -180,9 +180,12 @@ public class PlayerMarketService {
 	}
 	
 	private PlayerMarketItemDto convertItemToDto(PlayerMarketItem item) {
+		if(item.getTeam() == null) {
+			item.setTeam(new Team());
+		}
 		return new PlayerMarketItemDto(item.getPlayer().getName(), item.getTeam().getName(), 
 				item.getPlayer().getPosition(), item.getPlayer().getOverallPower().setScale(0, RoundingMode.CEILING).toPlainString(), 
-				item.getContractFee().toPlainString().concat(" ").concat(item.getCurrencyCode()));
+				item.getContractFee().toPlainString().concat(" ").concat(item.getCurrencyCode() != null ? item.getCurrencyCode() : ""));
 	}
 	
 	private List<PlayerMarketItemDto> createSimpleMarketItemByPlayerId(Long id) {
