@@ -7,6 +7,7 @@ import java.time.Period;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -37,6 +38,7 @@ public class PlayerMarketService {
 	
 	private static String GET_ALL_PLAYERS_URL = "http://localhost:8082/api/player/getallplayers";
 	private static String GET_TEAM_BY_NAME_URL = "http://localhost:8081/api/team/getteambyname";
+	private static String GET_PLAYER_BY_ID_URL = "http://localhost:8082/api/player/getplayerbyid?id=";
 	
 	public PlayerMarketResponse createPlayerMarket() {
 		PlayerMarketResponse playerMarketResponse = new PlayerMarketResponse();
@@ -74,6 +76,24 @@ public class PlayerMarketService {
 		return playerMarketResponse;
 	}
 	
+	public SimplePlayerMarketResponse getContractFeeOfPlayerById(Long id) {
+		SimplePlayerMarketResponse response = new SimplePlayerMarketResponse();
+		try {
+			response.setPlayerMarketList(createSimpleMarketItemByPlayerId(id));
+			response.setDescription("SUCCESS");
+			response.setResultCode(0);
+		} catch (PlayerMarketException e) {
+			response.setPlayerMarketList(new ArrayList<>());
+			response.setDescription(e.getMessage());
+			response.setResultCode(e.getErrorCode());
+		} catch (Exception e) {
+			response.setPlayerMarketList(new ArrayList<>());
+			response.setDescription("COMMON_UNKNOWN_ERROR");
+			response.setResultCode(900);
+		}
+		return response;
+	}
+	
 	private List<PlayerMarketItem> createMarketItems() {
 		List<PlayerMarketItem> itemList = new ArrayList<PlayerMarketItem>();
 		PlayerResponse response = restTemplate.getForObject(GET_ALL_PLAYERS_URL, PlayerResponse.class); 
@@ -87,7 +107,7 @@ public class PlayerMarketService {
 	}
 	
 	private Team getTeamOfPlayer(Player player) {
-		if(player.getTeamName() == null) {
+		if(player == null || player.getTeamName() == null) {
 			return null;
 		}
 		TeamRequest request = new TeamRequest(player.getTeamName());
@@ -154,12 +174,22 @@ public class PlayerMarketService {
 		List<PlayerMarketItemDto> dtoList = new ArrayList<PlayerMarketItemDto>();
 		PlayerMarketResponse response = createPlayerMarket();
 		for(PlayerMarketItem item : response.getPlayerMarketList()) {
-			PlayerMarketItemDto dto = new PlayerMarketItemDto(item.getPlayer().getName(), item.getTeam().getName(), 
-					item.getPlayer().getPosition(), item.getPlayer().getOverallPower().setScale(0, RoundingMode.CEILING).toPlainString(), 
-					item.getContractFee().toPlainString().concat(" ").concat(item.getCurrencyCode()));
-			dtoList.add(dto);
+			dtoList.add(convertItemToDto(item));
 		}
 		return dtoList;
+	}
+	
+	private PlayerMarketItemDto convertItemToDto(PlayerMarketItem item) {
+		return new PlayerMarketItemDto(item.getPlayer().getName(), item.getTeam().getName(), 
+				item.getPlayer().getPosition(), item.getPlayer().getOverallPower().setScale(0, RoundingMode.CEILING).toPlainString(), 
+				item.getContractFee().toPlainString().concat(" ").concat(item.getCurrencyCode()));
+	}
+	
+	private List<PlayerMarketItemDto> createSimpleMarketItemByPlayerId(Long id) {
+		PlayerResponse response = restTemplate.getForObject(GET_PLAYER_BY_ID_URL+id, PlayerResponse.class);
+		Player player = response.getPlayerList().stream().findFirst().orElse(null);
+		Team team = getTeamOfPlayer(player);
+		return Collections.singletonList(convertItemToDto(createItem(player, team)));
 	}
 
 }

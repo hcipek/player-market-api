@@ -2,9 +2,12 @@ package com.betbull.playermarket.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.betbull.playermarket.model.PlayerMarketRequest;
 import com.betbull.playermarket.model.PlayerMarketResponse;
 import com.betbull.playermarket.model.SimplePlayerMarketResponse;
 import com.betbull.playermarket.service.PlayerMarketService;
@@ -24,6 +27,11 @@ public class PlayerMarketController {
 	@GetMapping("/getbasicplayermarket")
 	public SimplePlayerMarketResponse getBasicPlayerMarket() {
 		return playerMarketService.createSimplePlayerMarket();
+	}
+	
+	@PostMapping("/getcontractfeeofplayermarketbyid")
+	public SimplePlayerMarketResponse getContractFeeOfPlayerById(@RequestBody PlayerMarketRequest request) {
+		return playerMarketService.getContractFeeOfPlayerById(request.getId());
 	}
 
 }
