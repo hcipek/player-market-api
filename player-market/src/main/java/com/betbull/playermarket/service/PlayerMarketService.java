@@ -107,7 +107,7 @@ public class PlayerMarketService {
 	}
 	
 	private Team getTeamOfPlayer(Player player) {
-		if(player == null || player.getTeamName() == null) {
+		if(player.getTeamName() == null) {
 			return null;
 		}
 		TeamRequest request = new TeamRequest(player.getTeamName());
@@ -188,6 +188,9 @@ public class PlayerMarketService {
 	private List<PlayerMarketItemDto> createSimpleMarketItemByPlayerId(Long id) {
 		PlayerResponse response = restTemplate.getForObject(GET_PLAYER_BY_ID_URL+id, PlayerResponse.class);
 		Player player = response.getPlayerList().stream().findFirst().orElse(null);
+		if(player == null) {
+			throw new PlayerMarketException(response.getDescription(), response.getResultCode());
+		}
 		Team team = getTeamOfPlayer(player);
 		return Collections.singletonList(convertItemToDto(createItem(player, team)));
 	}
